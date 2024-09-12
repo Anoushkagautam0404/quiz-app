@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Math Quiz</title>
+    <link rel="stylesheet" href="quiz.css" />
+  </head>
+  <body>
+    <form class="container"></form>
+
+    <script src="quiz.js"></script>
+    <script>
+      let formAddr = document.querySelector(".container");
+let heading = document.createElement("h1");
+formAddr.appendChild(heading);
+heading.textContent = "Random Math Quiz";
+heading.classList = "main-heading";
+
+let correctAnswers = []; // Array to store correct answers
+let questions = []; // Array to store question elements
+
+// Retrieving the current question from localStorage (or set to 0 if not available)
+let currentQuestion = localStorage.getItem("currentQuestion")
+  ? parseInt(localStorage.getItem("currentQuestion"))
+  : 0;
+
+// Generating random number of questions
+let numQuestions = Math.floor(Math.random() * 10) + 1;
+
+// Function to create a question
+function createQuestion(i) {
+  let arrOperator = ["+", "-", "*", "/", "%", "^"];
+  let randomOperator = arrOperator[Math.floor(Math.random() * arrOperator.length)];
+  let num1 = Math.round(Math.random() * 100);
+  let num2 = Math.round(Math.random() * 100);
+
+  let questionElement = document.createElement("div");
+  questionElement.classList.add("question");
+
+  // Creating a paragraph for the question
+  let paragraph = document.createElement("p");
+  questionElement.appendChild(paragraph);
+  paragraph.textContent = `${i + 1}. What is ${num1} ${randomOperator} ${num2}?`;
+  paragraph.classList.add("para");
+
+  let timerDisplay = document.createElement("span");
+  timerDisplay.classList.add("timer");
+  questionElement.appendChild(timerDisplay);
+
+  let timeLeft = 30;
+  timerDisplay.textContent = ` Time left: ${timeLeft}s`;
+
+  let correctAnswer = Math.round(answer(randomOperator, num1, num2) * 100) / 100;
+  correctAnswers.push(correctAnswer); // Store correct answer
+
+  for (let j = 0; j < 4; j++) {
+    let radio = document.createElement("input");
+    radio.type = "radio";
+    radio.name = `question-${i}`;
+    radio.classList.add("radio-class");
+    radio.value = j === 3 ? correctAnswer : Math.round(Math.random() * correctAnswer * 10 * 100) / 100;
+
+    let label = document.createElement("label");
+    label.classList.add("option-label");
+    label.appendChild(radio);
+    label.appendChild(document.createTextNode(radio.value));
+    questionElement.appendChild(label);
+
+    radio.addEventListener("change", function () {
+      disableOptions(i);
+      currentQuestion++;
+      localStorage.setItem("currentQuestion", currentQuestion); // Save current question index
+      goToNextQuestion(); // Move to next question immediately
+    });
+  }
+
+  // Append the question to the form but hide it initially
+  questionElement.style.display = "none";
+  formAddr.appendChild(questionElement);
+
+  questions.push({ element: questionElement, timerDisplay, timeLeft });
+}
+
+// Create all the questions at once
+for (let i = 0; i < numQuestions; i++) {
+  createQuestion(i);
+}
+
+// Show the current question and start the timer
+showCurrentQuestion();
+
+// Submit button
+let submitBtn = document.createElement("button");
+formAddr.appendChild(submitBtn);
+submitBtn.textContent = "Submit Quiz";
+submitBtn.classList.add("submit-btn");
+submitBtn.style.display = "none";
+submitBtn.addEventListener("click", function (e) {
+  e.preventDefault();
+  calculateScore();
+});
+
+// Function to disable options when time is up or answer is selected
+function disableOptions(questionNum) {
+  let radios = document.getElementsByName(`question-${questionNum}`);
+  radios.forEach((radio) => {
+    radio.disabled = true;
+  });
+}
+
+// Show the current question
+function showCurrentQuestion() {
+  if (currentQuestion < questions.length) {
+    let current = questions[currentQuestion];
+    current.element.style.display = "block"; // Show the current question
+
+    let timer = setInterval(function () {
+      current.timeLeft--;
+      current.timerDisplay.textContent = ` Time left: ${current.timeLeft}s`;
+
+      if (current.timeLeft <= 0) {
+        clearInterval(timer);
+        disableOptions(currentQuestion);
+        current.timerDisplay.textContent = " Time's up!";
+        currentQuestion++;
+        localStorage.setItem("currentQuestion", currentQuestion); // Save current question index
+        goToNextQuestion(); // Automatically move to the next question
+      }
+    }, 1000);
+  } else {
+    // All questions are answered, show submit button
+    submitBtn.style.display = "block";
+  }
+}
+
+// Move to the next question
+function goToNextQuestion() {
+  if (currentQuestion < questions.length) {
+    questions.forEach((q, index) => {
+      q.element.style.display = index === currentQuestion ? "block" : "none";
+    });
+    showCurrentQuestion(); // Ensure the timer is running for the new question
+  } else {
+    // All questions are answered, show submit button
+    submitBtn.style.display = "block";
+  }
+}
+
+// Logic to calculate the score
+function calculateScore() {
+  let score = 0;
+  correctAnswers.forEach((correctAnswer, index) => {
+    let selected = document.querySelector(`input[name="question-${index}"]:checked`);
+    if (selected && parseFloat(selected.value) === correctAnswer) {
+      score++;
+    }
+  });
+  alert(`Your score is: ${score} out of ${correctAnswers.length}`);
+  localStorage.removeItem("currentQuestion"); // Reset the current question index
+}
+
+// Logic for finding the answer of the questions
+function answer(randomOperator, num1, num2) {
+  switch (randomOperator) {
+    case "+":
+      return num1 + num2;
+    case "-":
+      return num1 - num2;
+    case "*":
+      return num1 * num2;
+    case "/":
+      return num1 / num2;
+    case "%":
+      return num1 % num2;
+    case "^":
+      return num1 ** num2;
+    default:
+      return "Invalid operator";
+  }
+}
+
+    </script>
+  </body>
+</html>
